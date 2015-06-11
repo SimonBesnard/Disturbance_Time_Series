@@ -65,33 +65,59 @@ stackName <- file.path(dirout, 'stack_BR_Sa2.grd')
 s <- timeStack(x=list, filename=stackName, datatype='INT2S', overwrite=TRUE)
 
 #2. Analyze trends and trend changes on time series
-
 #Create a time series dataframe
-BR_SA2_Zoo<- readRDS('Output/Au_Tum_Zoo.rds')
+BR_SA2_Zoo<- readRDS('Au_Tum.rds')
 BR_SA2_Zoo<- BR_SA2_Zoo/10000
 dates<- time(BR_SA2_Zoo)
-test <- bfastts(as.vector(BR_SA2_Zoo[,30]), dates, type = 'irregular')
+test <- bfastts(as.vector(BR_SA2_Zoo[,77]), dates, type = 'irregular')
 
 # calculate trend (default method: TrendAAT)
 trd <- Trend(test)
 plot(trd)
-ndvi
+
 # calculate trend but consider breakpoints
-trd <- Trend(test, mosum.pval=1)
+trd <- Trend(test, mosum.pval=0.5, breaks=1, sample.min.length =0.5 )
 plot(trd) 
 
-#3. Trend and breakpoint estimation on raster data sets
-plot(s, 4, col=brgr.colors(50))
-
-# calculate trend on the raster dataset using annual maximum NDVI
-trendmap <- TrendRaster(s, start=c(1982, 1), freq=12, method="AAT", breaks=1, funAnnual=max)
-plot(trendmap, col=brgr.colors(20), legend.width=2)
+#3. Analyse seasonality
+Seasonality(test, plot=TRUE)
 
 #4. Analyze phenology 
-
-# compute phenology metrics
-spl.trs <- Phenology(test, tsgf="TSGFspline", approach="White")
+spl.trs <- Phenology(test, tsgf="TSGFspline", method="Beck", approach="White",check.seasonality = 2)
 plot(spl.trs)
+plot(spl.trs$series)
 
+#6.Filling of permanent gaps in time series: FillPermanentGap
+
+# set NA values into winter months to simulate gaps
+winter <- (1:length(test))[cycle(test) == 1 | cycle(test) == 2 | cycle(test) == 12]
+gaps <- sample(winter, length(winter)*0.3)
+ndvi2 <- test
+ndvi2[gaps] <- NA
+plot(ndvi2)
+
+# check and fill permanent gaps
+IsPermanentGap(ndvi2)
+fill <- FillPermanentGaps(ndvi2) # default fills with the minimum value
+plot(fill, col="red"); lines(test)
+
+#7. Temporal smoothing and gap filling: TsPP
+
+# introduce random gaps 
+gaps <- test
+gaps[runif(100, 1, length(test))] <- NA
+
+# smoothing and gap filling
+tsgf <- TSGFspline(gaps)
+plot(gaps, main="Temporal smoothing and gap-filling using splines")
+lines(tsgf, col="red")
+
+#8. Detection of phenology events: PhenoDeriv and PhenoTrs
+
+# time series pre-processing
+x <- TsPP(tsgf, interpolate=F)[1:1096]
+
+# calculate phenology metrics for first year
+PhenoTrs(x, plot=TRUE, approach = "White")
 
   
