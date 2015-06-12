@@ -31,6 +31,7 @@ library(lubridate)
 library(ggplot2)
 library (strucchange)
 library(Kendall)
+
 rasterOptions(progress = 'text') # to show progress bar in raster calculations
 
 # Load the greenbrown package
@@ -104,7 +105,7 @@ plot(fill, col="red"); lines(test)
 #7. Temporal smoothing and gap filling: TsPP
 
 # introduce random gaps 
-gaps <- test
+gaps <- testtsgf
 gaps[runif(100, 1, length(test))] <- NA
 
 # smoothing and gap filling
@@ -115,9 +116,8 @@ lines(tsgf, col="red")
 #8. Detection of phenology events: PhenoDeriv and PhenoTrs
 
 # time series pre-processing
-x <- TsPP(tsgf, interpolate=F)[1:1096]
+x <- TsPP(tsgf, interpolate=F)
 
 # calculate phenology metrics for first year
 PhenoTrs(x, plot=TRUE, approach = "White")
-
   
