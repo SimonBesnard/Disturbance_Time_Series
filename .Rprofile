@@ -12,3 +12,4 @@ if(.Platform$OS.type == 'windows') {
   }
   
 } # For some reasons the empty line at the bottom is important
+
